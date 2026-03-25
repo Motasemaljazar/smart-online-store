@@ -1,0 +1,263 @@
+@page
+@model AdminDashboard.Pages.Admin.AdminPageModel
+@{
+    ViewData["Title"] = "المالية والعمولات";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <h2 class="h5 m-0 fw-bold">&#x1F4B0; المالية والعمولات</h2>
+  <div class="d-flex gap-2 flex-wrap">
+    <select id="filterMonth" class="form-select form-select-sm" style="width:auto">
+      <option value="">كل الأشهر</option>
+      @for(int m=1;m<=12;m++){<option value="@m">@(new DateTime(2024,m,1).ToString("MMMM"))</option>}
+    </select>
+    <select id="filterYear" class="form-select form-select-sm" style="width:auto">
+      @for(int y=DateTime.Now.Year;y>=DateTime.Now.Year-2;y--){<option value="@y">@y</option>}
+    </select>
+    <button class="btn btn-sm btn-primary" onclick="loadAll()">&#x1F50D; تحديث</button>
+    <button class="btn btn-sm btn-outline-warning" onclick="backfill()">&#x1F527; إصلاح</button>
+  </div>
+</div>
+
+<ul class="nav nav-pills mb-4" role="tablist">
+  <li class="nav-item">
+    <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#pane-commissions" type="button">
+      &#x1F4B0; عمولات المندوبين
+    </button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#pane-store" type="button">
+      &#x1F3EA; ملخص المتجر
+    </button>
+  </li>
+</ul>
+
+<div class="tab-content">
+
+  <!-- عمولات المندوبين -->
+  <div class="tab-pane fade show active" id="pane-commissions" role="tabpanel">
+    <div class="card border-0 shadow-sm rounded-4">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>المندوب</th>
+              <th>عدد الطلبات</th>
+              <th>إجمالي المبيعات</th>
+              <th>نسبة العمولة</th>
+              <th>العمولة المستحقة</th>
+              <th>المسوَّى</th>
+              <th>غير المسوَّى</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbCommissions">
+            <tr><td colspan="8" class="text-center text-muted py-4">جاري التحميل...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ملخص المتجر -->
+  <div class="tab-pane fade" id="pane-store" role="tabpanel">
+    <div class="row g-3" id="storeCards">
+      <div class="col-12 text-center text-muted py-4">جاري التحميل...</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal تفاصيل المندوب -->
+<div class="modal fade" id="agentModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="agentModalTitle">تفاصيل العمولات</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="agentModalBody">جاري التحميل...</div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-success" id="btnSettle">تسوية العمولات غير المسوَّاة</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+<script>
+const f2 = n => (isNaN(+n)||n==null) ? '0.00' : (+n).toFixed(2);
+const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+let _currentAgentId = null;
+
+function getQ(){
+  const m = document.getElementById('filterMonth').value;
+  const y = document.getElementById('filterYear').value;
+  return (m && y) ? '?month='+m+'&year='+y : '';
+}
+
+// مساعد لقراءة الحقل بغض النظر عن PascalCase أو camelCase
+function gv(obj, ...keys){
+  for(const k of keys){ if(obj[k]!==undefined) return obj[k]; }
+  return null;
+}
+
+async function loadAll(){
+  await Promise.all([loadCommissions(), loadStore()]);
+}
+
+async function loadCommissions(){
+  const tb = document.getElementById('tbCommissions');
+  tb.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">جاري التحميل...</td></tr>';
+  try {
+    const res  = await fetch('/api/admin/commissions'+getQ());
+    const data = await res.json();
+
+    // data يمكن أن يكون Array أو Object
+    const arr = Array.isArray(data) ? data : (data.items || data.data || [data]).filter(Boolean);
+
+    if(arr.length === 0){
+      tb.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">لا توجد عمولات للفترة المحددة</td></tr>';
+      return;
+    }
+
+    tb.innerHTML = arr.map(r => {
+      const id       = gv(r,'AgentId','agentId') ?? 0;
+      const name     = esc(gv(r,'AgentName','agentName') ?? '—');
+      const orders   = gv(r,'OrderCount','orderCount') ?? 0;
+      const sales    = f2(gv(r,'TotalSales','totalSales'));
+      const pct      = f2(gv(r,'CommissionPercent','commissionPercent'));
+      const comm     = f2(gv(r,'TotalCommission','totalCommission'));
+      const settled  = f2(gv(r,'TotalSettled','totalSettled'));
+      const unsettled= f2(gv(r,'TotalUnsettled','totalUnsettled'));
+      return `<tr>
+        <td><strong>${name}</strong></td>
+        <td>${orders}</td>
+        <td>${sales}</td>
+        <td>${pct}%</td>
+        <td class="text-danger fw-bold">${comm}</td>
+        <td class="text-success">${settled}</td>
+        <td class="text-warning fw-semibold">${unsettled}</td>
+        <td><button class="btn btn-sm btn-outline-primary" onclick="showAgent(${id})">&#x1F441;</button></td>
+      </tr>`;
+    }).join('');
+  } catch(e){
+    tb.innerHTML = '<tr><td colspan="8" class="text-danger text-center py-3">فشل التحميل: '+e.message+'</td></tr>';
+  }
+}
+
+async function loadStore(){
+  const el = document.getElementById('storeCards');
+  el.innerHTML = '<div class="col-12 text-center text-muted py-4">جاري التحميل...</div>';
+  try {
+    const res = await fetch('/api/admin/reports/store'+getQ());
+    const d   = await res.json();
+    const cnt = gv(d,'OrderCount','orderCount') ?? 0;
+    const rev = f2(gv(d,'TotalRevenue','totalRevenue'));
+    const fee = f2(gv(d,'TotalDeliveryFees','totalDeliveryFees'));
+    const avg = f2(gv(d,'AverageOrderValue','averageOrderValue'));
+    el.innerHTML = `
+      <div class="col-6 col-md-3"><div class="card border-0 shadow-sm rounded-4 p-3 text-center">
+        <div class="small text-muted mb-1">عدد الطلبات</div>
+        <div class="fs-4 fw-bold text-primary">${cnt}</div>
+      </div></div>
+      <div class="col-6 col-md-3"><div class="card border-0 shadow-sm rounded-4 p-3 text-center">
+        <div class="small text-muted mb-1">إجمالي الإيراد</div>
+        <div class="fs-4 fw-bold text-success">${rev}</div>
+      </div></div>
+      <div class="col-6 col-md-3"><div class="card border-0 shadow-sm rounded-4 p-3 text-center">
+        <div class="small text-muted mb-1">رسوم التوصيل</div>
+        <div class="fs-4 fw-bold text-info">${fee}</div>
+      </div></div>
+      <div class="col-6 col-md-3"><div class="card border-0 shadow-sm rounded-4 p-3 text-center">
+        <div class="small text-muted mb-1">متوسط قيمة الطلب</div>
+        <div class="fs-4 fw-bold text-secondary">${avg}</div>
+      </div></div>`;
+  } catch(e){
+    el.innerHTML = '<div class="col-12 text-danger text-center py-3">فشل تحميل ملخص المتجر</div>';
+  }
+}
+
+async function showAgent(agentId){
+  _currentAgentId = agentId;
+  document.getElementById('agentModalBody').innerHTML='<div class="text-center py-4"><div class="spinner-border"></div></div>';
+  new bootstrap.Modal(document.getElementById('agentModal')).show();
+  try {
+    const res = await fetch('/api/admin/commissions/'+agentId+getQ());
+    const d   = await res.json();
+    const agentName  = gv(d,'AgentName') ?? (d.Agent?.Name ?? d.Agent?.name ?? '—');
+    const totalSales = f2(gv(d,'TotalSales','totalSales'));
+    const totalComm  = f2(gv(d,'TotalCommission','totalCommission'));
+    const totalUns   = f2(gv(d,'TotalUnsettled','totalUnsettled'));
+    const comms      = d.Commissions ?? d.commissions ?? [];
+    document.getElementById('agentModalTitle').textContent = 'عمولات: '+agentName;
+    document.getElementById('agentModalBody').innerHTML = `
+      <div class="row g-3 mb-4">
+        <div class="col-4"><div class="card p-3 text-center border-0 bg-light rounded-4">
+          <div class="small text-muted">إجمالي المبيعات</div><div class="fw-bold text-success">${totalSales}</div>
+        </div></div>
+        <div class="col-4"><div class="card p-3 text-center border-0 bg-light rounded-4">
+          <div class="small text-muted">العمولة الكلية</div><div class="fw-bold text-danger">${totalComm}</div>
+        </div></div>
+        <div class="col-4"><div class="card p-3 text-center border-0 bg-light rounded-4">
+          <div class="small text-muted">غير مسوَّى</div><div class="fw-bold text-warning">${totalUns}</div>
+        </div></div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead class="table-light"><tr><th>الطلب</th><th>المبيعات</th><th>النسبة%</th><th>العمولة</th><th>الحالة</th></tr></thead>
+          <tbody>
+            ${comms.length===0
+              ? '<tr><td colspan="5" class="text-center text-muted">لا توجد تفاصيل</td></tr>'
+              : comms.map(c => {
+                  const oid  = gv(c,'OrderId','orderId') ?? '—';
+                  const sale = f2(gv(c,'SaleAmount','saleAmount'));
+                  const pct  = f2(gv(c,'CommissionPercent','commissionPercent'));
+                  const amt  = f2(gv(c,'CommissionAmount','commissionAmount'));
+                  const sat  = gv(c,'SettledAt','settledAt');
+                  return `<tr>
+                    <td>#${oid}</td><td>${sale}</td><td>${pct}%</td>
+                    <td class="text-danger fw-semibold">${amt}</td>
+                    <td>${sat ? '<span class="badge bg-success">مسوَّى</span>' : '<span class="badge bg-warning text-dark">معلق</span>'}</td>
+                  </tr>`;
+                }).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  } catch(e){
+    document.getElementById('agentModalBody').innerHTML='<div class="text-danger text-center py-3">فشل التحميل</div>';
+  }
+}
+
+document.getElementById('btnSettle').addEventListener('click', async () => {
+  if(!_currentAgentId) return;
+  if(!confirm('هل تريد تسوية جميع العمولات غير المسوَّاة لهذا المندوب؟')) return;
+  try {
+    const res = await fetch('/api/admin/commissions/'+_currentAgentId+'/settle',{method:'POST'});
+    const j   = await res.json();
+    alert(res.ok
+      ? 'تمت التسوية: '+(j.SettledCount??j.settledCount??0)+' عمولة'
+      : (j.error||'فشل'));
+    if(res.ok){ bootstrap.Modal.getInstance(document.getElementById('agentModal')).hide(); loadCommissions(); }
+  } catch(e){ alert('خطأ: '+e.message); }
+});
+
+async function backfill(){
+  if(!confirm('إصلاح العمولات المفقودة للطلبات القديمة؟')) return;
+  try {
+    const res = await fetch('/api/admin/commissions/backfill',{method:'POST'});
+    const j   = await res.json();
+    alert(j.message||'تم');
+    loadAll();
+  } catch(e){ alert('خطأ: '+e.message); }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const now = new Date();
+  document.getElementById('filterYear').value  = now.getFullYear();
+  document.getElementById('filterMonth').value = now.getMonth()+1;
+  loadAll();
+});
+</script>
+}

@@ -1,0 +1,103 @@
+@page
+@model AdminDashboard.Pages.Admin.AdminPageModel
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <h2 class="h5 m-0 fw-bold">&#11088; التقييمات</h2>
+  <button class="btn btn-sm btn-outline-secondary" id="btnRefresh">تحديث</button>
+</div>
+
+<!-- إحصائيات -->
+<div class="row g-3 mb-4">
+  <div class="col-12">
+    <div class="card border-0 rounded-4 p-3 text-center" style="background:#fff8e1">
+      <div class="fw-bold fs-4 text-warning" id="statStore">—</div>
+      <div class="small text-muted">متوسط تقييم المتجر</div>
+    </div>
+  </div>
+</div>
+
+<div class="alert alert-danger d-none" id="errBox"></div>
+
+<!-- تقييمات المتجر فقط -->
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+  <div class="card-header bg-transparent border-0 py-3">
+    <h6 class="m-0 fw-bold">&#11088; تقييمات المتجر</h6>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>رقم الطلب</th>
+          <th>اسم الزبون</th>
+          <th>تقييم المتجر</th>
+        </tr>
+      </thead>
+      <tbody id="tbOrder">
+        <tr><td colspan="3" class="text-center text-muted py-4">جاري التحميل...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+@section Scripts {
+<script>
+const gel = id => document.getElementById(id);
+const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const fmtStars = n => {
+  if(!n||n<1) return '<span class="text-muted">—</span>';
+  const c=['','text-danger','text-warning','text-info','text-primary','text-success'];
+  return '<span class="'+(c[n]||'text-muted')+' fw-bold">'+'★'.repeat(n)+'☆'.repeat(5-n)+' <small class="text-muted">'+n+'/5</small></span>';
+};
+
+async function load(){
+  gel('errBox').classList.add('d-none');
+  gel('tbOrder').innerHTML='<tr><td colspan="3" class="text-center text-muted py-4">جاري التحميل...</td></tr>';
+
+  let res, j;
+  try {
+    res = await fetch('/api/admin/ratings?type=order');
+    j   = await res.json();
+  } catch(e) {
+    gel('errBox').textContent = 'خطأ في الاتصال: ' + e.message;
+    gel('errBox').classList.remove('d-none');
+    gel('tbOrder').innerHTML='<tr><td colspan="3" class="text-danger text-center py-3">فشل الاتصال</td></tr>';
+    return;
+  }
+
+  if(!res.ok){
+    const msg = j && (j.message||j.error) ? (j.message||j.error) : 'فشل التحميل';
+    gel('errBox').textContent = 'خطأ '+res.status+': '+msg+(j.inner?' | '+j.inner:'');
+    gel('errBox').classList.remove('d-none');
+    gel('tbOrder').innerHTML='<tr><td colspan="3" class="text-danger text-center py-3">فشل التحميل</td></tr>';
+    return;
+  }
+
+  gel('statStore').textContent = j.storeAvg ? '⭐ '+j.storeAvg : '—';
+
+  // تقييمات المتجر فقط
+  const orders = j.orderItems || [];
+  gel('tbOrder').innerHTML = orders.length === 0
+    ? '<tr><td colspan="3" class="text-center text-muted py-4">لا توجد تقييمات متجر بعد</td></tr>'
+    : orders.map(x =>
+        '<tr>' +
+        '<td><strong>#'+x.orderId+'</strong></td>' +
+        '<td>'+esc(x.customerName||'—')+'</td>' +
+        '<td>'+fmtStars(x.storeRate)+'</td>' +
+        '</tr>'
+      ).join('');
+}
+
+gel('btnRefresh').addEventListener('click', load);
+load();
+
+(function(){
+  if(!window.signalR) return;
+  try {
+    const c = new signalR.HubConnectionBuilder().withUrl('/hubs/notify').withAutomaticReconnect().build();
+    c.on('rating_added', () => load());
+    c.on('ratings_updated', () => load());
+    c.start().catch(()=>{});
+  } catch(e) {}
+})();
+</script>
+}

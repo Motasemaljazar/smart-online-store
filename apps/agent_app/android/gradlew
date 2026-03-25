@@ -1,0 +1,21 @@
+#!/usr/bin/env sh
+
+# Standard Gradle wrapper launcher (minimal).
+
+set -e
+
+BASEDIR=$(cd "$(dirname "$0")" && pwd)
+WRAPPER_JAR="$BASEDIR/gradle/wrapper/gradle-wrapper.jar"
+
+if [ ! -f "$WRAPPER_JAR" ]; then
+  echo "Missing Gradle wrapper jar: $WRAPPER_JAR" 1>&2
+  exit 1
+fi
+
+if [ -n "$JAVA_HOME" ] && [ -x "$JAVA_HOME/bin/java" ]; then
+  JAVACMD="$JAVA_HOME/bin/java"
+else
+  JAVACMD="java"
+fi
+
+exec "$JAVACMD" -Dorg.gradle.appname=gradlew -classpath "$WRAPPER_JAR" org.gradle.wrapper.GradleWrapperMain "$@"
