@@ -108,8 +108,8 @@
 <table>
 <tr>
 <td align="center"><img src="screenshots/04_agent_chats.jpg" width="200"/><br/><b>Customer Chats</b><br/>دردشة العملاء</td>
-<td align="center"><img src="screenshots/05_agent_products.jpg" width="200"/><br/><b>My Products</b><br/>منتجاتي</td>
-<td align="center"><img src="screenshots/06_agent_reports.jpg" width="200"/><br/><b>Product Detail + Agent Chat</b><br/>تفاصيل المنتج + التواصل مع المندوب</td>
+<td align="center"><img src="screenshots/05_agent_products.jpg" width="200"/><br/><b>Product Detail + Agent Chat</b><br/>تفاصيل المنتج + التواصل مع المندوب</td>
+<td align="center"><img src="screenshots/06_agent_reports.jpg" width="200"/><br/><b>My Products</b><br/>منتجاتي</td>
 </tr>
 </table>
 
