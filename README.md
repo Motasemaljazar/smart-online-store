@@ -97,9 +97,9 @@
 
 <table>
 <tr>
-<td align="center"><img src="screenshots/01_customer_products.jpg" width="200"/><br/><b>Product Catalog</b><br/>قائمة المنتجات</td>
-<td align="center"><img src="screenshots/02_product_detail.jpg" width="200"/><br/><b>Product Detail + Agent Chat</b><br/>تفاصيل المنتج + التواصل مع المندوب</td>
-<td align="center"><img src="screenshots/03_ai_assistant.jpg" width="200"/><br/><b>AI Shopping Assistant</b><br/>المساعد الذكي للتسوق</td>
+<td align="center"><img src="screenshots/01_customer_products.jpg" width="200"/><br/><b>AI Shopping Assistant</b><br/>المساعد الذكي للتسوق</td>
+<td align="center"><img src="screenshots/02_product_detail.jpg" width="200"/><br/><b>Sales Reports</b><br/>تقارير المبيعات</td>
+<td align="center"><img src="screenshots/03_ai_assistant.jpg" width="200"/><br/><b>Product Catalog</b><br/>قائمة المنتجات</td>
 </tr>
 </table>
 
@@ -109,7 +109,7 @@
 <tr>
 <td align="center"><img src="screenshots/04_agent_chats.jpg" width="200"/><br/><b>Customer Chats</b><br/>دردشة العملاء</td>
 <td align="center"><img src="screenshots/05_agent_products.jpg" width="200"/><br/><b>My Products</b><br/>منتجاتي</td>
-<td align="center"><img src="screenshots/06_agent_reports.jpg" width="200"/><br/><b>Sales Reports</b><br/>تقارير المبيعات</td>
+<td align="center"><img src="screenshots/06_agent_reports.jpg" width="200"/><br/><b>Product Detail + Agent Chat</b><br/>تفاصيل المنتج + التواصل مع المندوب</td>
 </tr>
 </table>
 
@@ -118,10 +118,10 @@
 <table>
 <tr>
 <td align="center"><img src="screenshots/08_dashboard_agents.jpg" width="420"/><br/><b>Agents Management</b><br/>إدارة المندوبين</td>
-<td align="center"><img src="screenshots/09_dashboard_ratings.jpg" width="420"/><br/><b>Ratings & Reviews</b><br/>التقييمات</td>
+<td align="center"><img src="screenshots/09_dashboard_ratings.jpg" width="420"/><br/><b>Customer Complaints + AI Auto-Reply</b><br/> شكاوي الزبائن مع الرد التلقائي الذكي </td>
 </tr>
 <tr>
-<td align="center" colspan="2"><img src="screenshots/07_dashboard_complaints.jpg" width="700"/><br/><b>Customer Complaints + AI Auto-Reply</b><br/>شكاوى الزبائن مع الرد الذكي التلقائي</td>
+<td align="center" colspan="2"><img src="screenshots/07_dashboard_complaints.jpg" width="700"/><br/><b>Ratings & Reviews</b><br/>التقييمات</td>
 </tr>
 </table>
 
