@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🛒 Souq Net — Smart E-Commerce Platform
+# 🛒 Smart E-Commerce Platform
 ### منصة التجارة الإلكترونية الذكية
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
